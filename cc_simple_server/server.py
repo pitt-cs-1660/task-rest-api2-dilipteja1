@@ -141,6 +141,5 @@ async def delete_task(task_id: int):
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_ERROR, detail = "Database connection failed")
     finally:
         conn.commit()
-        message = f"Task {task_id} deleted successfully"
         conn.close()
         return {"message": f"Task {task_id} deleted successfully"}
