@@ -53,7 +53,7 @@ async def create_task(task_data: TaskCreate):
         print("New task successfully added")
         conn.close()
     
-    return [TaskRead(id=id, title = task_data.title, description = task_data.description, completed = task_data.completed)]
+    return TaskRead(id=id, title = task_data.title, description = task_data.description, completed = task_data.completed)
 
 # GET ROUTE to get all tasks
 @app.get("/tasks/", response_model=list[TaskRead])
