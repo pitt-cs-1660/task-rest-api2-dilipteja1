@@ -36,7 +36,7 @@ async def create_task(task_data: TaskCreate):
     Returns:
         TaskRead: The created task data
     """
-    id = 0
+    task_id = 0
     try:
         conn = get_db_connection()
         init_db()
@@ -45,15 +45,15 @@ async def create_task(task_data: TaskCreate):
             INSERT INTO tasks (title, description, completed)
                        VALUES (?, ?, ?)
 ''', (task_data.title, task_data.description, task_data.completed))
-        id = cursor.lastrowid
+        task_id = cursor.lastrowid
     except:
         raise HTTPException(status_code = 500, detail = "Database connection failed")
     finally:
         conn.commit()
         print("New task successfully added")
         conn.close()
-    
-    return TaskRead(id=id, title = task_data.title, description = task_data.description, completed = task_data.completed)
+    task = TaskRead(id=task_id, title = task_data.title, description = task_data.description, completed = task_data.completed)
+    return task
 
 # GET ROUTE to get all tasks
 @app.get("/tasks/", response_model=list[TaskRead])
@@ -69,8 +69,10 @@ async def get_tasks():
     """
     try:
         conn = get_db_connection()
-        init_db()
         cursor = conn.cursor()
+        cursor.execute('''    
+            SELECT * from tasks    
+''')
         all_tasks = cursor.fetchall()
         print(all_tasks)
     except:
@@ -78,7 +80,10 @@ async def get_tasks():
     finally:
         conn.commit()
         conn.close()
-        return [TaskRead(id=id, title = title, description = description, completed = completed) for (title, description, completed) in  all_tasks]
+        tasks = []
+        for task_data in all_tasks:
+            tasks.append(TaskRead(id=task_data['id'], title = task_data['title'], description = task_data['description'], completed = task_data['completed']))
+        return tasks
 
 
 # UPDATE ROUTE data is sent in the body of the request and the task_id is in the URL
@@ -114,7 +119,9 @@ async def update_task(task_id: int, task_data: TaskCreate):
         conn.commit()
         print(f"task {task_id} successfully updated")
         conn.close()
-    return [TaskRead(id = task_id, title = updated_row.title, description = updated_row.description, completed = updated_row.completed)]
+    task = TaskRead(id = task_id, title = updated_row.title, description = updated_row.description, completed = updated_row.completed)
+
+    return task
 
 
 # DELETE ROUTE task_id is in the URL
