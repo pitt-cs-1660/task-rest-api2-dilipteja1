@@ -36,6 +36,7 @@ async def create_task(task_data: TaskCreate):
     Returns:
         TaskRead: The created task data
     """
+    id = 0
     try:
         conn = get_db_connection()
         init_db()
@@ -44,14 +45,15 @@ async def create_task(task_data: TaskCreate):
             INSERT INTO tasks (title, description, completed)
                        VALUES (?, ?, ?)
 ''', (task_data.title, task_data.description, task_data.completed))
+        id = cursor.lastrowid
     except:
-        raise HTTPException(status_code = status.HTTP_500_INTERNAL_ERROR, detail = "Database connection failed")
+        raise HTTPException(status_code = 500, detail = "Database connection failed")
     finally:
         conn.commit()
         print("New task successfully added")
         conn.close()
     
-    return task_data
+    return [TaskRead(id=id, title = task_data.title, description = task_data.description, completed = task_data.completed)]
 
 # GET ROUTE to get all tasks
 @app.get("/tasks/", response_model=list[TaskRead])
@@ -70,12 +72,13 @@ async def get_tasks():
         init_db()
         cursor = conn.cursor()
         all_tasks = cursor.fetchall()
+        print(all_tasks)
     except:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_ERROR, detail = "Database connection failed")
     finally:
         conn.commit()
         conn.close()
-        return all_tasks
+        return [TaskRead(id=id, title = title, description = description, completed = completed) for (title, description, completed) in  all_tasks]
 
 
 # UPDATE ROUTE data is sent in the body of the request and the task_id is in the URL
@@ -92,17 +95,26 @@ async def update_task(task_id: int, task_data: TaskCreate):
         TaskRead: The updated task data
     """
     try:
+        # connect to the database
         conn = get_db_connection()
         init_db()
         cursor = conn.cursor()
+        # update the row in the db
         cursor.execute('''
                        UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?''', (task_data.title, task_data.description, task_data.completed, task_id))
+        # get the updated row
+        cursor.execute('''
+            SELECT * FROM users WHERE id = ?
+''' ,(task_id, ))
+        updated_row =  cursor.fetchone()
+        print(updated_row)
     except:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_ERROR, detail = "Database connection failed")
     finally:
         conn.commit()
         print(f"task {task_id} successfully updated")
         conn.close()
+    return [TaskRead(id = task_id, title = updated_row.title, description = updated_row.description, completed = updated_row.completed)]
 
 
 # DELETE ROUTE task_id is in the URL
@@ -128,3 +140,4 @@ async def delete_task(task_id: int):
         conn.commit()
         print(f"task {task_id} successfully deleted")
         conn.close()
+        return
