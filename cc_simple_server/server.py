@@ -70,11 +70,8 @@ async def get_tasks():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('''    
-            SELECT * from tasks    
-''')
+        cursor.execute(''' SELECT * from tasks ''')
         all_tasks = cursor.fetchall()
-        print(all_tasks)
     except:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_ERROR, detail = "Database connection failed")
     finally:
@@ -119,8 +116,6 @@ async def update_task(task_id: int, task_data: TaskCreate):
         print(f"task {task_id} successfully updated")
         conn.close()
         task = []
-        # for task_data in updated_row:
-        print(updated_row['id'])
         task = TaskRead(id=int(updated_row['id']), title = updated_row['title'], description = updated_row['description'], completed = updated_row['completed'])
 
         return task
@@ -146,6 +141,6 @@ async def delete_task(task_id: int):
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_ERROR, detail = "Database connection failed")
     finally:
         conn.commit()
-        print(f"task {task_id} successfully deleted")
+        message = f"Task {task_id} deleted successfully"
         conn.close()
-        return
+        return {"message": {message}}
