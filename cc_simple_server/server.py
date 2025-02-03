@@ -73,7 +73,7 @@ async def get_tasks():
         cursor.execute(''' SELECT * from tasks ''')
         all_tasks = cursor.fetchall()
     except:
-        raise HTTPException(status_code = status.HTTP_500_INTERNAL_ERROR, detail = "Database connection failed")
+        raise HTTPException(status_code = 500, detail = "Database connection failed")
     finally:
         conn.commit()
         conn.close()
@@ -109,6 +109,8 @@ async def update_task(task_id: int, task_data: TaskCreate):
             SELECT * FROM tasks WHERE id = ?
 ''' ,(task_id, ))
         updated_row =  cursor.fetchone()
+        if not updated_row:
+            raise HTTPException(status_code = 404, detail="Task not found")
     except:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_ERROR, detail = "Database connection failed")
     finally:
@@ -138,7 +140,7 @@ async def delete_task(task_id: int):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
     except:
-        raise HTTPException(status_code = status.HTTP_500_INTERNAL_ERROR, detail = "Database connection failed")
+        raise HTTPException(status_code =500, detail = "Database connection failed")
     finally:
         conn.commit()
         conn.close()
