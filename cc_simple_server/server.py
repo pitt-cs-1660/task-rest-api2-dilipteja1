@@ -99,29 +99,31 @@ async def update_task(task_id: int, task_data: TaskCreate):
     Returns:
         TaskRead: The updated task data
     """
+    updated_row = []
     try:
         # connect to the database
         conn = get_db_connection()
-        init_db()
         cursor = conn.cursor()
         # update the row in the db
         cursor.execute('''
                        UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?''', (task_data.title, task_data.description, task_data.completed, task_id))
         # get the updated row
         cursor.execute('''
-            SELECT * FROM users WHERE id = ?
+            SELECT * FROM tasks WHERE id = ?
 ''' ,(task_id, ))
         updated_row =  cursor.fetchone()
-        print(updated_row)
     except:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_ERROR, detail = "Database connection failed")
     finally:
         conn.commit()
         print(f"task {task_id} successfully updated")
         conn.close()
-    task = TaskRead(id = task_id, title = updated_row.title, description = updated_row.description, completed = updated_row.completed)
+        task = []
+        # for task_data in updated_row:
+        print(updated_row['id'])
+        task = TaskRead(id=int(updated_row['id']), title = updated_row['title'], description = updated_row['description'], completed = updated_row['completed'])
 
-    return task
+        return task
 
 
 # DELETE ROUTE task_id is in the URL
@@ -138,7 +140,6 @@ async def delete_task(task_id: int):
     """
     try:
         conn = get_db_connection()
-        init_db()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
     except:
